@@ -1,0 +1,73 @@
+{
+  "entries": [
+    {
+      "timestamp": "2024-01-20T12:00:00Z",
+      "severity": "INFO",
+      "jsonPayload": {
+        "message": "Request processed successfully",
+        "requestId": "req-001",
+        "latency": "45ms",
+        "statusCode": 200
+      },
+      "resource": {
+        "type": "k8s_container",
+        "labels": {
+          "cluster_name": "production-us-central1",
+          "container_name": "api-gateway"
+        }
+      }
+    },
+    {
+      "timestamp": "2024-01-20T12:15:00Z",
+      "severity": "WARNING",
+      "jsonPayload": {
+        "message": "High memory utilization detected",
+        "memoryUsage": "85%",
+        "threshold": "80%",
+        "pod": "api-gateway-7b9c6df6d5-xvn2k"
+      },
+      "resource": {
+        "type": "k8s_container",
+        "labels": {
+          "cluster_name": "production-us-central1",
+          "container_name": "api-gateway"
+        }
+      }
+    },
+    {
+      "timestamp": "2024-01-20T12:30:00Z",
+      "severity": "ERROR",
+      "jsonPayload": {
+        "message": "Database query timeout",
+        "query": "SELECT * FROM orders WHERE created_at > ?",
+        "duration": "30s",
+        "error": "context deadline exceeded"
+      },
+      "resource": {
+        "type": "cloud_sql_database",
+        "labels": {
+          "database_id": "prod-orders-db",
+          "region": "us-central1"
+        }
+      }
+    },
+    {
+      "timestamp": "2024-01-20T12:45:00Z",
+      "severity": "CRITICAL",
+      "jsonPayload": {
+        "message": "Service mesh communication failure",
+        "source": "checkout-service",
+        "destination": "inventory-service",
+        "error": "no healthy upstream",
+        "retries": 3
+      },
+      "resource": {
+        "type": "k8s_container",
+        "labels": {
+          "cluster_name": "production-us-central1",
+          "container_name": "checkout-service"
+        }
+      }
+    }
+  ]
+}

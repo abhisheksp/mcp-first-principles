@@ -1,0 +1,56 @@
+## Anomaly Detection Report - Traffic Pattern Analysis
+
+**Alert Summary:**
+Unusual traffic spike detected requiring immediate attention.
+
+**Anomaly Details:**
+1. **Traffic Volume**
+   - Baseline: 1,000 requests/minute
+   - Current: 5,000 requests/minute
+   - Increase: 500% (5x normal traffic)
+   - Duration: Ongoing for 12 minutes
+
+2. **Traffic Characteristics**
+   - Source: Single IP address (185.220.101.45)
+   - User-Agent: Identical across all requests
+   - Request Pattern: Sequential API endpoints
+   - Geographic Location: TOR exit node
+
+3. **Behavioral Analysis**
+   - No authentication attempts
+   - Targeting public endpoints only
+   - High request rate: 83 req/sec from single source
+   - No normal user interaction patterns
+
+**Risk Assessment: HIGH**
+- Potential DDoS attack in progress
+- Resource exhaustion risk
+- May be reconnaissance for vulnerabilities
+- Could impact legitimate user traffic
+
+**Similar Historical Patterns:**
+- 2024-01-05: Bot scraping attempt (blocked)
+- 2023-12-20: DDoS attack from botnet
+- 2023-11-15: Vulnerability scanner detected
+
+**Recommended Actions:**
+1. **Immediate Response:**
+   - Block IP address 185.220.101.45
+   - Enable rate limiting (10 req/min per IP)
+   - Activate DDoS protection mode
+
+2. **Investigation Steps:**
+   - Check for data exfiltration attempts
+   - Review access logs for other suspicious IPs
+   - Analyze request payloads for injection attempts
+
+3. **Preventive Measures:**
+   - Implement CAPTCHA for high-rate requests
+   - Deploy geographic rate limiting
+   - Consider implementing proof-of-work challenges
+
+**Impact Assessment:**
+- Current system load: 73% CPU
+- Response time degradation: +200ms
+- Error rate increase: 1.2%
+- Affected users: ~5% experiencing slowness

@@ -1,0 +1,44 @@
+{
+  "events": [
+    {
+      "timestamp": 1705752000000,
+      "message": "ERROR PaymentService - API timeout after 30000ms - Transaction ID: tx-12345",
+      "logStreamName": "payment-service-prod"
+    },
+    {
+      "timestamp": 1705752060000,
+      "message": "ERROR PaymentService - Database connection pool exhausted. Active: 100, Idle: 0",
+      "logStreamName": "payment-service-prod"
+    },
+    {
+      "timestamp": 1705752120000,
+      "message": "WARN PaymentService - High latency detected: p99=5000ms, p95=3000ms",
+      "logStreamName": "payment-service-prod"
+    },
+    {
+      "timestamp": 1705752180000,
+      "message": "ERROR PaymentService - Failed to acquire database connection after 10 retries",
+      "logStreamName": "payment-service-prod"
+    },
+    {
+      "timestamp": 1705752240000,
+      "message": "INFO PaymentService - Circuit breaker OPEN for payment-gateway",
+      "logStreamName": "payment-service-prod"
+    },
+    {
+      "timestamp": 1705752300000,
+      "message": "ERROR PaymentService - java.net.SocketTimeoutException: Read timed out",
+      "logStreamName": "payment-service-prod"
+    },
+    {
+      "timestamp": 1705752360000,
+      "message": "WARN PaymentService - Queue depth increasing: 1500 messages pending",
+      "logStreamName": "payment-service-prod"
+    },
+    {
+      "timestamp": 1705752420000,
+      "message": "ERROR PaymentService - OutOfMemoryError: Java heap space",
+      "logStreamName": "payment-service-prod"
+    }
+  ]
+}
