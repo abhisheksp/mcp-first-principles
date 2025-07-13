@@ -17,27 +17,37 @@
     },
     {
       "timestamp": 1705752180000,
-      "message": "ERROR PaymentService - Failed to acquire database connection after 10 retries",
-      "logStreamName": "payment-service-prod"
+      "message": "INFO UserService - Successfully processed 1523 requests",
+      "logStreamName": "user-service-prod"
     },
     {
       "timestamp": 1705752240000,
-      "message": "INFO PaymentService - Circuit breaker OPEN for payment-gateway",
-      "logStreamName": "payment-service-prod"
+      "message": "INFO MetricsCollector - Current request rate: 5000 req/min from IP 192.168.1.100",
+      "logStreamName": "production-metrics"
     },
     {
       "timestamp": 1705752300000,
-      "message": "ERROR PaymentService - java.net.SocketTimeoutException: Read timed out",
+      "message": "ERROR PaymentService - Circuit breaker OPEN for payment-gateway",
       "logStreamName": "payment-service-prod"
     },
     {
       "timestamp": 1705752360000,
-      "message": "WARN PaymentService - Queue depth increasing: 1500 messages pending",
-      "logStreamName": "payment-service-prod"
+      "message": "INFO LoadBalancer - Rerouting traffic due to unhealthy instances in us-east-1a",
+      "logStreamName": "infrastructure-prod"
     },
     {
       "timestamp": 1705752420000,
-      "message": "ERROR PaymentService - OutOfMemoryError: Java heap space",
+      "message": "WARN DatabaseConnection - Connection pool usage at 95%",
+      "logStreamName": "database-prod"
+    },
+    {
+      "timestamp": 1705752480000,
+      "message": "INFO APIGateway - Request count: 45000, Error rate: 2.3%, Avg latency: 230ms",
+      "logStreamName": "production-metrics"
+    },
+    {
+      "timestamp": 1705752540000,
+      "message": "ERROR PaymentService - Failed to connect to payment processor: Connection refused",
       "logStreamName": "payment-service-prod"
     }
   ]
