@@ -51,4 +51,21 @@ public class AWSLogSource implements CloudLogSource {
     public String getCloudProvider() {
         return "AWS";
     }
+    
+    @Override
+    public SourceCapabilities getCapabilities() {
+        return SourceCapabilities.builder()
+            .provider("AWS")
+            .description("AWS CloudWatch Logs - Full featured logging and metrics")
+            .supportedOperations(List.of("fetchLogs", "fetchMetrics", "streamLogs", "exportLogs"))
+            .supportedResources(List.of("payment-service", "user-service", "order-service", "inventory-service"))
+            .supportedFilters(List.of("ERROR", "WARN", "INFO", "DEBUG"))
+            .supportedTimeRanges(List.of("1h", "24h", "7d", "30d", "90d"))
+            .metadata(Map.of(
+                "region", "us-east-1",
+                "retentionDays", "90",
+                "features", "insights,alarms,dashboards"
+            ))
+            .build();
+    }
 }

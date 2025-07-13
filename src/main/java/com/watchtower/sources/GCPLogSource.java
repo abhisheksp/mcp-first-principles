@@ -60,4 +60,20 @@ public class GCPLogSource implements CloudLogSource {
     public String getCloudProvider() {
         return "GCP";
     }
+    
+    @Override
+    public SourceCapabilities getCapabilities() {
+        return SourceCapabilities.builder()
+            .provider("GCP")
+            .description("Google Cloud Logging (Stackdriver)")
+            .supportedOperations(List.of("fetchLogs", "fetchMetrics"))
+            .supportedResources(List.of("payment-service", "user-service"))
+            .supportedFilters(List.of("ERROR", "INFO"))
+            .supportedTimeRanges(List.of("1h", "24h", "7d"))
+            .metadata(Map.of(
+                "projectId", "my-gcp-project",
+                "retentionDays", "30"
+            ))
+            .build();
+    }
 }
