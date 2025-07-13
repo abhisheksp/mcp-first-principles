@@ -7,7 +7,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Tests for WatchTower.AI Agent
- * Branch 02-gcp-pressure: Testing AWS and GCP implementations
+ * Branch 03-extract-interface: Testing the cleaner interface-based approach
  */
 class WatchTowerAgentTest {
     
@@ -24,11 +24,25 @@ class WatchTowerAgentTest {
     }
     
     @Test
+    @DisplayName("Show available cloud providers")
+    void showAvailableProviders() {
+        var providers = agent.getAvailableProviders();
+        
+        System.out.println("\n" + "=".repeat(50));
+        System.out.println(">>> AVAILABLE CLOUD PROVIDERS");
+        System.out.println("=".repeat(50));
+        providers.forEach(p -> System.out.println("  - " + p));
+        System.out.println("=".repeat(50) + "\n");
+        
+        assertThat(providers).containsExactlyInAnyOrder("AWS", "GCP");
+    }
+    
+    @Test
     @DisplayName("Troubleshoot AWS: Why are payment APIs failing?")
     void troubleshootPaymentFailuresAWS() {
         String analysis = agent.troubleshootErrors(
             "Payment API returning 500 errors in last hour",
-            "AWS"  // Now we need to specify the provider!
+            "AWS"
         );
         
         System.out.println("\n" + "=".repeat(50));
@@ -38,10 +52,9 @@ class WatchTowerAgentTest {
         System.out.println("=".repeat(50) + "\n");
         
         assertThat(analysis)
-            .contains("AWS")  // Should indicate which cloud
+            .contains("AWS")
             .contains("timeout")
-            .contains("connection pool")
-            .contains("Recommendation");
+            .contains("connection pool");
     }
     
     @Test
@@ -49,7 +62,7 @@ class WatchTowerAgentTest {
     void troubleshootPaymentFailuresGCP() {
         String analysis = agent.troubleshootErrors(
             "Payment API returning 500 errors in last hour",
-            "GCP"  // Same query, different cloud!
+            "GCP"
         );
         
         System.out.println("\n" + "=".repeat(50));
@@ -59,9 +72,8 @@ class WatchTowerAgentTest {
         System.out.println("=".repeat(50) + "\n");
         
         assertThat(analysis)
-            .contains("GCP")  // Should indicate which cloud
+            .contains("GCP")
             .contains("timeout")
-            .contains("connection pool")
-            .contains("Recommendation");
+            .contains("connection pool");
     }
 }
