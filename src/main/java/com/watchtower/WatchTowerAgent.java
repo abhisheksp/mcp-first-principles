@@ -9,41 +9,92 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * WatchTower.AI Agent - Now with discovery and multiple personas!
+ * WatchTower.AI Agent - Showing the system prompt pattern for personas
+ * 
+ * Note: This is separate from the transport multiplication problem.
+ * The agent uses these prompts regardless of how sources are accessed.
  */
 @Slf4j
 public class WatchTowerAgent {
     private final Map<String, CloudLogSource> sources;
     private final LLMFake llm;
     
+    // The "secret sauce" - carefully crafted system prompts for each persona
+    // This is typically the proprietary/differentiating part of AI agents
+    private static final Map<String, String> PERSONA_SYSTEM_PROMPTS = Map.of(
+        "troubleshoot", """
+            You are an expert Site Reliability Engineer with 15 years of experience.
+            When analyzing logs for issues:
+            1. Identify the specific error patterns and their frequency
+            2. Determine the root cause based on error messages and timing
+            3. Assess the blast radius and user impact
+            4. Provide immediate mitigation steps
+            5. Suggest long-term fixes
+            
+            Format your response as:
+            ISSUE SUMMARY: [Brief description]
+            ROOT CAUSE: [Technical explanation]
+            IMPACT: [Who/what is affected]
+            IMMEDIATE ACTION: [Steps to fix now]
+            LONG-TERM FIX: [Permanent solution]
+            """,
+            
+        "summary", """
+            You are a technical analyst preparing executive dashboards.
+            When summarizing logs:
+            1. Calculate key metrics (error rate, throughput, latency)
+            2. Identify trends and patterns
+            3. Highlight significant events
+            4. Compare to historical baselines
+            
+            Format your response as:
+            PERIOD: [Time range]
+            KEY METRICS: [Bulleted list]
+            TRENDS: [What changed]
+            NOTABLE EVENTS: [Important occurrences]
+            RECOMMENDATIONS: [Action items]
+            """,
+            
+        "anomaly", """
+            You are a security analyst specializing in threat detection.
+            When detecting anomalies:
+            1. Establish normal baseline behavior
+            2. Identify deviations from baseline
+            3. Classify anomaly severity (low/medium/high/critical)
+            4. Assess security implications
+            5. Recommend investigation steps
+            
+            Format your response as:
+            BASELINE: [Normal behavior]
+            ANOMALIES DETECTED: [List of deviations]
+            SEVERITY: [Risk level]
+            SECURITY IMPLICATIONS: [Potential threats]
+            RECOMMENDED ACTIONS: [Next steps]
+            """
+    );
+    
     public WatchTowerAgent() {
         this.sources = initializeCloudSources();
         this.llm = new LLMFake();
         
-        // Show what each source can do
-        System.out.println(">>> WatchTower.AI initialized with capabilities:");
-        sources.forEach((name, source) -> {
-            var caps = source.getCapabilities();
-            System.out.printf("  %s: %s (operations: %s)%n", 
-                name, caps.getDescription(), caps.getSupportedOperations());
-        });
+        System.out.println(">>> WatchTower.AI initialized");
+        System.out.println(">>> Available personas with specialized prompts: " + 
+            PERSONA_SYSTEM_PROMPTS.keySet());
     }
     
+    // Existing initialization code...
     private Map<String, CloudLogSource> initializeCloudSources() {
-        // AWS Source
         CloudLogSource awsSource = new AWSLogSource();
         awsSource.initialize(Map.of(
             "AWS_ACCESS_KEY_ID", getConfigValue("AWS_ACCESS_KEY_ID"),
             "AWS_SECRET_ACCESS_KEY", getConfigValue("AWS_SECRET_ACCESS_KEY")
         ));
         
-        // GCP Source
         CloudLogSource gcpSource = new GCPLogSource();
         gcpSource.initialize(Map.of(
             "GOOGLE_APPLICATION_CREDENTIALS", getConfigValue("GOOGLE_APPLICATION_CREDENTIALS")
         ));
         
-        // Azure Source (NEW!)
         CloudLogSource azureSource = new AzureLogSource();
         azureSource.initialize(Map.of(
             "AZURE_SUBSCRIPTION_ID", getConfigValue("AZURE_SUBSCRIPTION_ID"),
@@ -52,11 +103,7 @@ public class WatchTowerAgent {
             "AZURE_CLIENT_SECRET", getConfigValue("AZURE_CLIENT_SECRET")
         ));
         
-        return Map.of(
-            "AWS", awsSource,
-            "GCP", gcpSource,
-            "AZURE", azureSource
-        );
+        return Map.of("AWS", awsSource, "GCP", gcpSource, "AZURE", azureSource);
     }
     
     private String getConfigValue(String key) {
@@ -68,133 +115,73 @@ public class WatchTowerAgent {
         return value != null ? value : ""; // Return empty string instead of null
     }
     
+    // Each persona method uses its specialized system prompt
     public String troubleshootErrors(String userQuery, String cloudProvider) {
         CloudLogSource source = sources.get(cloudProvider);
         if (source == null) {
-            return "I cannot troubleshoot errors for " + cloudProvider + " as it's not a configured provider.";
+            return "Unknown provider: " + cloudProvider;
         }
         
-        var capabilities = source.getCapabilities();
-        
-        // Check if we can fetch logs
-        if (!capabilities.getSupportedOperations().contains("fetchLogs")) {
-            return String.format("[%s] I cannot troubleshoot errors as this provider doesn't support fetching logs.", 
-                cloudProvider);
-        }
-        
+        // Fetch appropriate data for troubleshooting
         List<LogEntry> logs = source.fetchLogs("payment-service", "ERROR", 1000);
+        String logData = formatLogs(logs);
         
-        String logData = logs.stream()
-            .map(log -> String.format("[%s] %s", log.timestamp(), log.message()))
-            .collect(Collectors.joining("\n"));
-        
-        return llm.complete("troubleshoot", 
-            String.format("[%s] %s", cloudProvider, userQuery), 
-            logData);
+        // Use the troubleshooting system prompt
+        String systemPrompt = PERSONA_SYSTEM_PROMPTS.get("troubleshoot");
+        return llm.completeWithSystemPrompt(systemPrompt, userQuery, logData);
     }
     
     public String generateSummary(String timeRange, String cloudProvider) {
         CloudLogSource source = sources.get(cloudProvider);
         if (source == null) {
-            return "I cannot generate a summary for " + cloudProvider + " as it's not a configured provider.";
+            return "Unknown provider: " + cloudProvider;
         }
         
-        var capabilities = source.getCapabilities();
+        // Fetch appropriate data for summary
+        List<LogEntry> logs = source.fetchLogs("payment-service", "INFO", 5000);
+        String logData = formatLogs(logs);
         
-        // Check what data we can gather
-        boolean canFetchLogs = capabilities.getSupportedOperations().contains("fetchLogs");
-        boolean canFetchMetrics = capabilities.getSupportedOperations().contains("fetchMetrics");
-        boolean supportsTimeRange = capabilities.getSupportedTimeRanges().contains(timeRange);
-        
-        if (!canFetchLogs && !canFetchMetrics) {
-            return String.format("[%s] I cannot generate a summary as this provider doesn't support fetching logs or metrics.", 
-                cloudProvider);
-        }
-        
-        if (!supportsTimeRange) {
-            // Gracefully fall back to supported time range
-            String fallbackRange = capabilities.getSupportedTimeRanges().isEmpty() ? 
-                "24h" : capabilities.getSupportedTimeRanges().get(0);
-            timeRange = fallbackRange;
-        }
-        
-        String logData = "";
-        if (canFetchLogs) {
-            List<LogEntry> logs = source.fetchLogs("payment-service", "INFO", 5000);
-            logData = formatLogsForSummary(logs);
-        }
-        
-        // Note what data is available for the LLM
-        String context = String.format(
-            "[%s] Generate summary for %s (logs: %s, metrics: %s)", 
-            cloudProvider, timeRange, canFetchLogs, canFetchMetrics
-        );
-        
-        return llm.complete("summary", context, logData);
+        // Use the summary system prompt
+        String systemPrompt = PERSONA_SYSTEM_PROMPTS.get("summary");
+        return llm.completeWithSystemPrompt(systemPrompt, 
+            "Generate summary for " + timeRange, logData);
     }
     
     public String detectAnomalies(String baseline, String cloudProvider) {
         CloudLogSource source = sources.get(cloudProvider);
         if (source == null) {
-            return "I cannot detect anomalies for " + cloudProvider + " as it's not a configured provider.";
+            return "Unknown provider: " + cloudProvider;
         }
         
-        var capabilities = source.getCapabilities();
+        // Fetch appropriate data for anomaly detection
+        List<LogEntry> logs = source.fetchLogs("payment-service", "INFO", 10000);
+        String logData = formatLogs(logs);
         
-        // Check what we need for anomaly detection
-        boolean canFetchLogs = capabilities.getSupportedOperations().contains("fetchLogs");
-        boolean canFetchMetrics = capabilities.getSupportedOperations().contains("fetchMetrics");
-        boolean hasLongTermData = capabilities.getSupportedTimeRanges().stream()
-            .anyMatch(range -> range.equals("30d") || range.equals("90d"));
-        
-        if (!canFetchLogs && !canFetchMetrics) {
-            return String.format("[%s] I cannot detect anomalies without access to logs or metrics.", 
-                cloudProvider);
-        }
-        
-        if (!hasLongTermData) {
-            // Warn but proceed with limited data
-            String availableRange = capabilities.getSupportedTimeRanges().isEmpty() ? 
-                "24h" : capabilities.getSupportedTimeRanges().get(capabilities.getSupportedTimeRanges().size() - 1);
-            
-            return llm.complete("anomaly",
-                String.format("[%s] Detecting anomalies with limited historical data (%s only). Baseline: %s", 
-                    cloudProvider, availableRange, baseline),
-                "Limited data available"
-            );
-        }
-        
-        String logData = "";
-        if (canFetchLogs) {
-            List<LogEntry> logs = source.fetchLogs("payment-service", "INFO", 10000);
-            logData = formatLogsForAnomalyDetection(logs);
-        }
-        
-        return llm.complete("anomaly",
-            String.format("[%s] Detect anomalies. Baseline: %s", cloudProvider, baseline),
-            logData);
+        // Use the anomaly detection system prompt
+        String systemPrompt = PERSONA_SYSTEM_PROMPTS.get("anomaly");
+        return llm.completeWithSystemPrompt(systemPrompt,
+            "Detect anomalies with baseline: " + baseline, logData);
     }
     
-    // Discovery method - let callers know what's available
+    // Note: We could refactor to a single method that infers persona from user query
+    // public String analyze(String userQuery, String cloudProvider) {
+    //     String persona = llm.inferPersona(userQuery);
+    //     String systemPrompt = PERSONA_SYSTEM_PROMPTS.get(persona);
+    //     // ... fetch appropriate data based on persona
+    //     return llm.completeWithSystemPrompt(systemPrompt, userQuery, data);
+    // }
+    
+    private String formatLogs(List<LogEntry> logs) {
+        return logs.stream()
+            .map(log -> String.format("[%s] %s", log.timestamp(), log.message()))
+            .collect(Collectors.joining("\n"));
+    }
+    
     public Map<String, SourceCapabilities> discoverCapabilities() {
         return sources.entrySet().stream()
             .collect(Collectors.toMap(
                 Map.Entry::getKey,
                 e -> e.getValue().getCapabilities()
             ));
-    }
-    
-    private String formatLogsForSummary(List<LogEntry> logs) {
-        // Group by severity for summary
-        return logs.stream()
-            .collect(Collectors.groupingBy(LogEntry::severity))
-            .entrySet().stream()
-            .map(e -> String.format("%s: %d entries", e.getKey(), e.getValue().size()))
-            .collect(Collectors.joining("\n"));
-    }
-    
-    private String formatLogsForAnomalyDetection(List<LogEntry> logs) {
-        // Time-based grouping for anomaly detection
-        return "Log patterns over time..."; // Simplified for demo
     }
 }

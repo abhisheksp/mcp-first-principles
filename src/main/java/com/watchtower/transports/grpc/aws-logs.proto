@@ -1,0 +1,36 @@
+syntax = "proto3";
+
+package watchtower.grpc;
+
+// gRPC service definition for AWS Log Source
+service AWSLogService {
+    rpc FetchLogs(LogRequest) returns (LogResponse);
+    rpc StreamLogs(LogRequest) returns (stream LogEntry);
+    rpc GetCapabilities(Empty) returns (Capabilities);
+}
+
+message LogRequest {
+    string resource = 1;
+    string filter = 2;
+    int32 limit = 3;
+}
+
+message LogResponse {
+    repeated LogEntry logs = 1;
+    int32 total_count = 2;
+}
+
+message LogEntry {
+    string timestamp = 1;
+    string message = 2;
+    string severity = 3;
+}
+
+message Capabilities {
+    string provider = 1;
+    repeated string operations = 2;
+    repeated string resources = 3;
+    repeated string filters = 4;
+}
+
+message Empty {}
