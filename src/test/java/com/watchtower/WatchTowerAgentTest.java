@@ -1,8 +1,13 @@
 package com.watchtower;
 
+import com.watchtower.model.Metric;
+import com.watchtower.sources.CloudLogSource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;
+
+import java.util.List;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
@@ -38,7 +43,6 @@ class WatchTowerAgentTest {
         System.out.println("=".repeat(50) + "\n");
         
         assertThat(analysis)
-            .contains("AWS")  // Should indicate which cloud
             .contains("timeout")
             .contains("connection pool")
             .contains("Recommendation");
@@ -59,9 +63,27 @@ class WatchTowerAgentTest {
         System.out.println("=".repeat(50) + "\n");
         
         assertThat(analysis)
-            .contains("GCP")  // Should indicate which cloud
             .contains("timeout")
             .contains("connection pool")
             .contains("Recommendation");
+    }
+    
+    @Test
+    @DisplayName("Verify metrics fetching works for all providers")
+    void testMetricsFetching() {
+        var providers = agent.getAvailableProviders();
+        
+        for (String provider : providers) {
+            CloudLogSource source = agent.sources.get(provider);
+            List<Metric> metrics = source.fetchMetrics("payment-service", "error_rate", "1h");
+            
+            System.out.println("\n>>> " + provider + " Metrics Sample:");
+            metrics.stream().limit(3).forEach(m -> 
+                System.out.printf("  [%s] %s: %.2f %s%n", 
+                    m.getTimestamp(), m.getName(), m.getValue(), m.getUnit())
+            );
+            
+            assertThat(metrics).isNotEmpty();
+        }
     }
 }

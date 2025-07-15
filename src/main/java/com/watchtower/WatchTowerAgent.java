@@ -1,94 +1,96 @@
 package com.watchtower;
 
-import com.watchtower.fakes.AWSCloudWatchFake;
-import com.watchtower.fakes.GCPLoggingFake;
 import com.watchtower.llm.LLMFake;
 import com.watchtower.model.LogEntry;
+import com.watchtower.model.Metric;
+import com.watchtower.sources.AWSLogSource;
+import com.watchtower.sources.CloudLogSource;
+import com.watchtower.sources.GCPLogSource;
 import lombok.extern.slf4j.Slf4j;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * WatchTower.AI Agent - Now with AWS AND GCP support!
+ * WatchTower.AI Agent - Phase 3: Clean abstraction with multiple operations
  * 
- * Notice how quickly this is getting messy:
- * - Two different clients
- * - Two different auth patterns
- * - If-else logic everywhere
- * - What happens when we add Azure?
+ * Now we have a clean CloudLogSource interface that hides cloud-specific details.
+ * Both fetchLogs and fetchMetrics are available, but WE still decide what to call and when.
+ * 
+ * The hidden problem: We're still hardcoding the decision of what data to fetch!
  */
 @Slf4j
 public class WatchTowerAgent {
-    // Now we have TWO clients!
-    private final AWSCloudWatchFake awsClient;
-    private final GCPLoggingFake gcpClient;
+    
+    public final Map<String, CloudLogSource> sources;
     private final LLMFake llm;
     
     public WatchTowerAgent() {
-        // This constructor is getting out of hand...
+        log.info(">>> Initializing WatchTower.AI with clean abstractions...");
         
-        // AWS Authentication
-        Map<String, Optional<String>> awsCredentials = Map.of(
-            "accessKeyId", Optional.ofNullable(System.getenv("AWS_ACCESS_KEY_ID")),
-            "secretAccessKey", Optional.ofNullable(System.getenv("AWS_SECRET_ACCESS_KEY")),
-            "region", Optional.of("us-east-1")
-        );
-        
-        System.out.println(">>> Authenticating with AWS...");
-        this.awsClient = new AWSCloudWatchFake(awsCredentials);
-        
-        // GCP Authentication - completely different pattern!
-        String gcpServiceAccount = System.getenv("GOOGLE_APPLICATION_CREDENTIALS");
-        
-        System.out.println(">>> Authenticating with GCP...");
-        this.gcpClient = new GCPLoggingFake(gcpServiceAccount);
-        
-        // Initialize LLM
+        this.sources = new HashMap<>();
         this.llm = new LLMFake();
         
-        System.out.println(">>> WatchTower.AI initialized with AWS and GCP support");
+        // Initialize AWS source
+        CloudLogSource awsSource = new AWSLogSource();
+        awsSource.initialize(Map.of(
+            "accessKeyId", System.getenv("AWS_ACCESS_KEY_ID") != null ? System.getenv("AWS_ACCESS_KEY_ID") : "fake-key",
+            "secretAccessKey", System.getenv("AWS_SECRET_ACCESS_KEY") != null ? System.getenv("AWS_SECRET_ACCESS_KEY") : "fake-secret",
+            "region", "us-east-1"
+        ));
+        sources.put("AWS", awsSource);
+        
+        // Initialize GCP source
+        CloudLogSource gcpSource = new GCPLogSource();
+        gcpSource.initialize(Map.of(
+            "serviceAccountPath", System.getenv("GOOGLE_APPLICATION_CREDENTIALS") != null ? System.getenv("GOOGLE_APPLICATION_CREDENTIALS") : "fake-path"
+        ));
+        sources.put("GCP", gcpSource);
+        
+        log.info(">>> WatchTower.AI initialized with {} cloud sources", sources.size());
     }
     
-    // Now we need a provider parameter! 🚨
     public String troubleshootErrors(String userQuery, String cloudProvider) {
-        System.out.println(">>> Troubleshooting on " + cloudProvider + ": " + userQuery);
+        log.info(">>> Troubleshooting on {}: {}", cloudProvider, userQuery);
         
-        List<LogEntry> logs;
-        
-        // The if-else mess begins... 🚨
-        if ("AWS".equals(cloudProvider)) {
-            // AWS-specific API call
-            logs = awsClient.filterLogEvents(
-                "/aws/payment-service",
-                "ERROR",
-                1000
-            );
-        } else if ("GCP".equals(cloudProvider)) {
-            // GCP-specific API call - different method name, different parameters!
-            logs = gcpClient.listLogEntries(
-                "projects/my-gcp-project/logs/payment-service",
-                "severity=\"ERROR\"",
-                1000
-            );
-        } else {
-            throw new IllegalArgumentException("Unsupported cloud provider: " + cloudProvider);
+        CloudLogSource source = sources.get(cloudProvider);
+        if (source == null) {
+            return "I cannot troubleshoot errors for " + cloudProvider + " as it's not a configured provider.";
         }
         
-        // At least this part is the same...
+        // WE decide to fetch logs first
+        List<LogEntry> logs = source.fetchLogs("payment-service", "ERROR", 1000);
+        
+        // WE decide to also check metrics
+        List<Metric> errorRates = source.fetchMetrics("payment-service", "error_rate", "1h");
+        
+        // WE manually combine the data
         String logData = logs.stream()
             .map(log -> String.format("[%s] %s", log.timestamp(), log.message()))
             .collect(Collectors.joining("\n"));
+            
+        String metricData = errorRates.stream()
+            .map(m -> String.format("[%s] %s: %.2f %s", m.getTimestamp(), m.getName(), m.getValue(), m.getUnit()))
+            .collect(Collectors.joining("\n"));
         
-        // But wait, we should tell the LLM which cloud it's analyzing!
-        return llm.complete("troubleshoot", 
-            String.format("[%s] %s", cloudProvider, userQuery), 
-            logData);
+        String combinedContext = String.format(
+            "User Query: %s\n\nError Logs:\n%s\n\nError Rate Metrics:\n%s",
+            userQuery, logData, metricData
+        );
+        
+        // Send everything to LLM as combined context
+        return llm.complete("troubleshoot", userQuery, combinedContext);
     }
     
-    // TODO: Still need to add summary and anomaly detection...
-    // TODO: What about Azure? This is already getting messy!
-    // TODO: How do we handle different log formats per cloud?
-    // TODO: The constructor is becoming a monster...
+    public List<String> getAvailableProviders() {
+        return new ArrayList<>(sources.keySet());
+    }
+    
+    public String getProviderInfo(String cloudProvider) {
+        CloudLogSource source = sources.get(cloudProvider);
+        if (source == null) {
+            return "Provider " + cloudProvider + " is not configured.";
+        }
+        return "Provider: " + source.getCloudProvider() + " (configured and ready)";
+    }
 }
