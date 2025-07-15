@@ -108,10 +108,11 @@ The sources internally translate:
 
 ## The Hidden Problem
 
-While our code is cleaner, we still have limitations:
-- Sources have hardcoded mappings for known services
-- What if we need logs from a service not in the mapping?
-- What if different sources support different operations?
-- How does the agent know what's available?
+While our code is cleaner, we still have a fundamental limitation:
+- **We decide** what logs to fetch (hardcoded fetchLogs call)
+- **We build** the context manually (logs + query)
+- **We format** everything for the LLM
 
-This leads us to our next challenge: **Discovery**
+What if the LLM could decide what data it needs?
+
+This leads us to our next evolution: **Function Calling**
