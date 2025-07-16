@@ -29,49 +29,47 @@ class WatchTowerAgentTest {
     }
     
     @Test
-    @DisplayName("Troubleshoot AWS: Why are payment APIs failing?")
-    void troubleshootPaymentFailuresAWS() {
-        String analysis = agent.troubleshootErrors(
+    @DisplayName("Analyze AWS: Why are payment APIs failing?")
+    void analyzePaymentFailuresAWS() {
+        String analysis = agent.analyze(
             "Payment API returning 500 errors in last hour",
-            "AWS"  // Now we need to specify the provider!
+            "AWS"
         );
         
         System.out.println("\n" + "=".repeat(50));
-        System.out.println(">>> AWS TROUBLESHOOTING ANALYSIS");
+        System.out.println(">>> AWS ANALYSIS COMPLETE");
         System.out.println("=".repeat(50));
         System.out.println(analysis);
         System.out.println("=".repeat(50) + "\n");
         
         assertThat(analysis)
-            .contains("timeout")
-            .contains("connection pool")
-            .contains("Recommendation");
+            .contains("Root Cause")
+            .contains("Database connection pool");
     }
     
     @Test
-    @DisplayName("Troubleshoot GCP: Why are payment APIs failing?")
-    void troubleshootPaymentFailuresGCP() {
-        String analysis = agent.troubleshootErrors(
+    @DisplayName("Analyze GCP: Why are payment APIs failing?")
+    void analyzePaymentFailuresGCP() {
+        String analysis = agent.analyze(
             "Payment API returning 500 errors in last hour",
-            "GCP"  // Same query, different cloud!
+            "GCP"
         );
         
         System.out.println("\n" + "=".repeat(50));
-        System.out.println(">>> GCP TROUBLESHOOTING ANALYSIS");
+        System.out.println(">>> GCP ANALYSIS COMPLETE");
         System.out.println("=".repeat(50));
         System.out.println(analysis);
         System.out.println("=".repeat(50) + "\n");
         
         assertThat(analysis)
-            .contains("timeout")
-            .contains("connection pool")
-            .contains("Recommendation");
+            .contains("Root Cause")
+            .contains("Database connection pool");
     }
     
     @Test
     @DisplayName("Verify metrics fetching works for all providers")
     void testMetricsFetching() {
-        var providers = agent.getAvailableProviders();
+        List<String> providers = List.of("AWS", "GCP");
         
         for (String provider : providers) {
             CloudLogSource source = agent.sources.get(provider);

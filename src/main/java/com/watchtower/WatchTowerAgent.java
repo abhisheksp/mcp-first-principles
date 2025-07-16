@@ -9,16 +9,14 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * WatchTower.AI Agent - Now with Function Calling!
- * 
- * The LLM can now orchestrate data fetching instead of us hardcoding it.
+ * WatchTower.AI Agent - Clean version with function calling only
  */
 @Slf4j
 public class WatchTowerAgent {
     public final Map<String, CloudLogSource> sources;
     private final LLMFake llm;
     
-    // Define available functions
+    // Available functions that can be called
     private final List<FunctionDefinition> availableFunctions = List.of(
         FunctionDefinition.builder()
             .name("fetchLogs")
@@ -45,7 +43,7 @@ public class WatchTowerAgent {
         this.sources = initializeCloudSources();
         this.llm = new LLMFake();
         
-        System.out.println(">>> WatchTower.AI initialized with function calling");
+        System.out.println(">>> WatchTower.AI initialized");
         System.out.println(">>> Available functions: " + 
             availableFunctions.stream().map(FunctionDefinition::getName).toList());
     }
@@ -67,12 +65,9 @@ public class WatchTowerAgent {
     }
     
     /**
-     * NEW: Analyze using function calling - LLM orchestrates!
+     * Analyze using function calling - LLM orchestrates the investigation
      */
-    public String analyzeWithFunctions(String userQuery, String cloudProvider) {
-        System.out.println("\n>>> Starting function-based analysis");
-        System.out.println(">>> User query: " + userQuery);
-        
+    public String analyze(String userQuery, String cloudProvider) {
         CloudLogSource source = sources.get(cloudProvider);
         if (source == null) {
             return "Unknown cloud provider: " + cloudProvider;
@@ -92,7 +87,7 @@ public class WatchTowerAgent {
         while (iterations < 10) { // Safety limit
             iterations++;
             
-            // Get LLM response with function calling
+            // Get LLM response
             LLMResponse response = llm.completeWithFunctions(conversation, availableFunctions);
             
             System.out.println(">>> LLM: " + response.getContent());
@@ -119,11 +114,8 @@ public class WatchTowerAgent {
                     "content", formatFunctionResult(result)
                 ));
                 
-                System.out.println(">>> Function result provided to LLM");
-                
             } else {
                 // LLM has final answer
-                System.out.println(">>> Analysis complete");
                 return response.getContent();
             }
         }
@@ -167,70 +159,36 @@ public class WatchTowerAgent {
             return "Error: " + result.getError();
         }
         
-        if (result.getResult() instanceof List<?> list) {
-            if (!list.isEmpty() && list.get(0) instanceof LogEntry) {
-                List<LogEntry> logs = (List<LogEntry>) list;
-                return "Found " + logs.size() + " log entries:\n" +
-                    logs.stream()
-                        .limit(10)
-                        .map(log -> String.format("[%s] %s", log.timestamp(), log.message()))
-                        .collect(Collectors.joining("\n"));
-            } else if (!list.isEmpty() && list.get(0) instanceof Metric) {
-                List<Metric> metrics = (List<Metric>) list;
-                return "Found " + metrics.size() + " metric data points:\n" +
-                    metrics.stream()
-                        .limit(10)
-                        .map(m -> String.format("[%s] %s: %.2f %s", 
-                            m.getTimestamp(), m.getName(), m.getValue(), m.getUnit()))
-                        .collect(Collectors.joining("\n"));
+        if (result.getResult() instanceof List<?> list && !list.isEmpty()) {
+            Object first = list.get(0);
+            if (first instanceof LogEntry) {
+                return formatLogs((List<LogEntry>) list);
+            } else if (first instanceof Metric) {
+                return formatMetrics((List<Metric>) list);
             }
         }
         
         return result.getResult().toString();
     }
     
-    // Keep old methods for comparison
-    public String troubleshootErrors(String userQuery, String cloudProvider) {
-        log.info(">>> OLD METHOD: Troubleshooting with hardcoded sequence");
-        
-        CloudLogSource source = sources.get(cloudProvider);
-        if (source == null) {
-            return "Unknown provider: " + cloudProvider;
-        }
-        
-        // WE decide to fetch logs first
-        List<LogEntry> logs = source.fetchLogs("payment-service", "ERROR", 1000);
-        
-        // WE decide to also check metrics
-        List<Metric> metrics = source.fetchMetrics("payment-service", "error_rate", "1h");
-        
-        // WE manually combine the data
-        String logData = logs.stream()
-            .map(log -> String.format("[%s] %s", log.timestamp(), log.message()))
-            .collect(Collectors.joining("\n"));
-            
-        String metricData = metrics.stream()
-            .map(m -> String.format("[%s] %s: %.2f %s", 
-                m.getTimestamp(), m.getName(), m.getValue(), m.getUnit()))
-            .collect(Collectors.joining("\n"));
-        
-        String combinedContext = String.format(
-            "User Query: %s\n\nError Logs:\n%s\n\nError Rate Metrics:\n%s",
-            userQuery, logData, metricData
-        );
-        
-        return llm.complete("troubleshoot", userQuery, combinedContext);
+    private String formatLogs(List<LogEntry> logs) {
+        return "Found " + logs.size() + " log entries:\n" +
+            logs.stream()
+                .limit(10)
+                .map(log -> String.format("[%s] %s", log.timestamp(), log.message()))
+                .collect(Collectors.joining("\n"));
     }
     
-    public List<String> getAvailableProviders() {
-        return new ArrayList<>(sources.keySet());
+    private String formatMetrics(List<Metric> metrics) {
+        return "Found " + metrics.size() + " metric data points:\n" +
+            metrics.stream()
+                .limit(10)
+                .map(m -> String.format("[%s] %s: %.2f %s", 
+                    m.getTimestamp(), m.getName(), m.getValue(), m.getUnit()))
+                .collect(Collectors.joining("\n"));
     }
     
-    public String getProviderInfo(String cloudProvider) {
-        CloudLogSource source = sources.get(cloudProvider);
-        if (source == null) {
-            return "Provider " + cloudProvider + " is not configured.";
-        }
-        return "Provider: " + source.getCloudProvider() + " (configured and ready)";
+    public List<FunctionDefinition> getAvailableFunctions() {
+        return availableFunctions;
     }
 }

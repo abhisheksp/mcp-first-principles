@@ -22,21 +22,18 @@ class FunctionCallingTest {
     }
     
     @Test
-    @DisplayName("Compare: Old hardcoded vs New function calling")
-    void compareOldVsNew() {
+    @DisplayName("Function calling analysis")
+    void functionCallingAnalysis() {
         System.out.println("\n" + "=".repeat(60));
-        System.out.println(">>> COMPARISON: Hardcoded vs Function Calling");
+        System.out.println(">>> FUNCTION CALLING ANALYSIS");
         System.out.println("=".repeat(60));
         
-        // Old way
-        System.out.println("\n--- OLD WAY (Hardcoded Sequence) ---");
-        String oldResult = agent.troubleshootErrors("Why are payments failing?", "AWS");
-        System.out.println("Old result: " + oldResult.substring(0, Math.min(100, oldResult.length())) + "...");
+        String result = agent.analyze("Why are payments failing?", "AWS");
+        System.out.println("\nFinal result:\n" + result);
         
-        // New way
-        System.out.println("\n--- NEW WAY (LLM Orchestrates) ---");
-        String newResult = agent.analyzeWithFunctions("Why are payments failing?", "AWS");
-        System.out.println("\nFinal result:\n" + newResult);
+        assertThat(result)
+            .contains("Root Cause")
+            .contains("Database connection pool");
         
         System.out.println("=".repeat(60));
     }
@@ -48,7 +45,7 @@ class FunctionCallingTest {
         System.out.println(">>> DYNAMIC INVESTIGATION");
         System.out.println("=".repeat(60));
         
-        String result = agent.analyzeWithFunctions(
+        String result = agent.analyze(
             "Payment service is slow. Investigate why.", 
             "AWS"
         );
@@ -66,14 +63,14 @@ class FunctionCallingTest {
         
         // Query 1: Error focused
         System.out.println("\n--- Query: Error Investigation ---");
-        agent.analyzeWithFunctions("Check for any errors in payment service", "GCP");
+        agent.analyze("Check for any errors in payment service", "GCP");
         
         // Reset LLM state
         agent = new WatchTowerAgent();
         
         // Query 2: Performance focused  
         System.out.println("\n--- Query: Performance Investigation ---");
-        agent.analyzeWithFunctions("Analyze payment service performance", "GCP");
+        agent.analyze("Analyze payment service performance", "GCP");
         
         System.out.println("\n>>> Notice: LLM chooses different function sequences!");
     }
