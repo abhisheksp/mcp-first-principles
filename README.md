@@ -1,37 +1,53 @@
-# MCP First Principles - WatchTower.AI Journey
+## WatchTower.AI *MCP First-Principles* Talk
 
-A live coding demonstration showing the natural evolution from hardcoded cloud integrations to the Model Context Protocol (MCP).
+### 1  Why this repo exists
 
-## Talk Structure
+This repository is the companion for a 45-minute talk (+15 Q\&A) that walks engineers from “one-off AWS demo” to “fully-fledged protocol (MCP)”.
+Each git branch represents a chapter in that story; the code is illustrative, but the **learning happens in the journey between branches**.
 
-This repository uses git branches to show the progression:
+### 2  How to follow along during the talk
 
-1. `01-aws-mvp` - Initial AWS-only implementation
-2. `02-gcp-pressure` - Copy-paste GCP addition (the mess begins)
-3. `03-extract-interface` - First refactoring to common interface
-4. `04-azure-discovery` - Adding discovery capabilities
-5. `05-multiple-personas` - Multiple analysis methods
-6. `06-transport-chaos` - Transport multiplication problem
-7. `07-protocol-emerges` - Our own protocol design
-8. `08-mcp-adoption` - Cloud sources as MCP servers
+| Phase | Git branch                       | High-level theme                        | Speaker resource    |
+| ----- | -------------------------------- | --------------------------------------- | ------------------- |
+| 0     | **main**                         | Skeleton Maven project                  | *Phase-0-prompt.md* |
+| 1     | **01-aws-mvp**                   | Hard-coded AWS MVP                      | *Phase-1-prompt.md* |
+| 2     | **02-gcp-pressure**              | Quick-fix GCP support → copy-paste pain | *Phase-2-prompt.md* |
+| 3     | **03-extract-interface**         | Extract common interface                | *Phase-3-prompt.md* |
+| 4     | **04-function-calling**          | LLM function-calling revolution         | *Phase-4-prompt.md* |
+| 5     | **05-transport-standardization** | Transport multiplication problem        | *Phase-5-prompt.md* |
+| 6     | **06-protocol-revelation**       | One protocol → MCP connection           | *Phase-6-prompt.md* |
 
-## Running the Demo
+> **Tip for attendees**
+>
+> ```
+> git clone <repo>
+> git checkout 03-extract-interface   # or any phase you want
+> docs/03-extract-interface.md        # slide-style notes / speaker narrative
+> ```
 
-Each branch has the same test structure:
-```bash
-# Switch to any branch
-git checkout 01-aws-mvp
+### 3  Repo anatomy
 
-# Run the demo
-mvn test
-
-# Or run specific test
-mvn test -Dtest=WatchTowerAgentTest#troubleshootPaymentFailures
+```
+.
+├── docs/                       # One markdown “slide deck” per phase
+├── claude-code-full-prompts/   # Full Claude Code prompts for each phase
+├── src/main/java/…             # Illustrative implementation per branch
+└── src/test/java/…             # Demo tests you’ll run live
 ```
 
-## Key Concepts Demonstrated
+*If you want the gritty implementation details, open the matching prompt file or branch.*
 
-- Why discovery matters for AI agents
-- How transport concerns multiply complexity  
-- Why protocols beat APIs for AI integration
-- How MCP emerges from good engineering practices
+### 4  Running the demos live
+
+1. **Check out the branch for the phase you’re discussing.**
+2. `mvn test -q` to run the illustrative JUnit scenarios; they log rich console output.
+3. Use `git diff` between phases to *show, not tell* how design pressure drives refactors.
+
+### 5  About the Claude.ai prompts
+
+Toward the end of **Phase 5** the Claude chat hit the token-limit wall. The prompt in *Phase-5-prompt.md* contains minor manual edits where context had to be re-introduced before continuing.&#x20;
+
+### 6  Full design conversation (placeholder)
+
+For transparency, the entire Claude.ai session is shared here:
+https://claude.ai/share/5ce77a82-5a02-4206-bf20-ed9b0d03a1f6
