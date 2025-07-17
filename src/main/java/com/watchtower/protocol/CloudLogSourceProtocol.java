@@ -1,5 +1,7 @@
 package com.watchtower.protocol;
 
+import com.fasterxml.jackson.databind.JsonNode;
+
 /**
  * CloudLogSource Protocol Specification v1.0
  * 
@@ -31,6 +33,30 @@ package com.watchtower.protocol;
  * - -32603: Internal error
  */
 public interface CloudLogSourceProtocol {
-    // This is a marker interface to document the protocol
-    // Actual implementation uses JSON-RPC messages
+    
+    /**
+     * Initialize the server with the provided credentials/configuration.
+     * This is the first method called after connection establishment.
+     * 
+     * @param request The initialize request containing credentials
+     * @return JsonNode result indicating successful initialization
+     */
+    JsonNode initialize(ProtocolMessages.Request request);
+    
+    /**
+     * Discover available tools/functions that this server provides.
+     * This allows clients to understand what capabilities are available.
+     * 
+     * @return JsonNode containing the list of available functions
+     */
+    JsonNode discover();
+    
+    /**
+     * Execute a specific function/tool with the provided parameters.
+     * This is how clients invoke the server's capabilities.
+     * 
+     * @param request The execute request containing function name and parameters
+     * @return JsonNode result of the function execution
+     */
+    JsonNode execute(ProtocolMessages.Request request);
 }
