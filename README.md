@@ -1,8 +1,14 @@
 ## WatchTower.AI *MCP First-Principles* Talk
 
+### 📊 Presentation Slides
+
+**[View Complete Presentation: slides/slides.html](slides/slides.html)**
+
+Open the HTML file in your browser to see the full talk slides with animations and visual explanations of the MCP evolution.
+
 ### 1  Why this repo exists
 
-This repository is the companion for a 45-minute talk (+15 Q\&A) that walks engineers from “one-off AWS demo” to “fully-fledged protocol (MCP)”.
+This repository is the companion for a 45-minute talk (+15 Q\&A) that walks engineers from "one-off AWS demo" to "fully-fledged protocol (MCP)".
 Each git branch represents a chapter in that story; the code is illustrative, but the **learning happens in the journey between branches**.
 
 ### 2  How to follow along during the talk
@@ -29,19 +35,23 @@ Each git branch represents a chapter in that story; the code is illustrative, bu
 
 ```
 .
-├── docs/                       # One markdown “slide deck” per phase
+├── slides/                     # Complete HTML presentation with images
+├── docs/                       # One markdown "slide deck" per phase
 ├── claude-code-full-prompts/   # Full Claude Code prompts for each phase
 ├── src/main/java/…             # Illustrative implementation per branch
-└── src/test/java/…             # Demo tests you’ll run live
+└── src/test/java/…             # Demo tests you'll run live
 ```
 
 *If you want the gritty implementation details, open the matching prompt file or branch.*
 
 ### 4  Running the demos live
 
-1. **Check out the branch for the phase you’re discussing.**
-2. `mvn test -q` to run the illustrative JUnit scenarios; they log rich console output.
-3. Use `git diff` between phases to *show, not tell* how design pressure drives refactors.
+1. **Open the presentation**: Start with `slides/slides.html` in your browser for the visual narrative
+2. **Check out the branch for the phase you're discussing.**
+3. `mvn test -q` to run the illustrative JUnit scenarios; they log rich console output.
+4. Use `git diff` between phases to *show, not tell* how design pressure drives refactors.
+
+> **Speaker tip**: The slides and code work together - use slides to explain concepts, then switch to the terminal to show the actual implementation evolving through the branches.
 
 ### 5  About the Claude.ai prompts
 

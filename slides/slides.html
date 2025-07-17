@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>APIs to MCP: Standardizing Agent Integrations</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif;
+            overflow: hidden;
+            background: #0a1628;
+            color: #ffffff;
+        }
+        
+        .slide {
+            width: 100vw;
+            height: 100vh;
+            position: absolute;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            transition: opacity 0.5s ease-in-out;
+        }
+        
+        .slide.active {
+            display: flex;
+            opacity: 1;
+        }
+        
+        /* Particle Canvas Background */
+        #particleCanvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+        
+        /* Content Layer */
+        .slide-content {
+            position: relative;
+            z-index: 2;
+            text-align: center;
+            max-width: 1200px;
+            width: 90%;
+            padding: 0 60px;
+        }
+        
+        /* Typography */
+        h1 {
+            font-size: 96px;
+            font-weight: 700;
+            letter-spacing: -2px;
+            margin-bottom: 20px;
+            opacity: 0;
+            animation: fadeInUp 1s ease-out forwards;
+        }
+        
+        h2 {
+            font-size: 72px;
+            font-weight: 600;
+            margin-bottom: 40px;
+            color: #e0e6ed;
+            opacity: 0;
+            animation: fadeInUp 1s ease-out forwards;
+        }
+        
+        h3 {
+            font-size: 48px;
+            font-weight: 500;
+            margin-bottom: 30px;
+            color: #c9d1d9;
+        }
+        
+        .subtitle {
+            font-size: 42px;
+            font-weight: 300;
+            color: #a8b2c7;
+            margin-top: 30px;
+            opacity: 0;
+            animation: fadeInUp 1s ease-out 0.3s forwards;
+        }
+        
+        .accent-line {
+            width: 120px;
+            height: 3px;
+            background: linear-gradient(90deg, #ff6b6b, #4ecdc4);
+            margin: 40px auto;
+            opacity: 0;
+            animation: expandWidth 1s ease-out 0.6s forwards;
+        }
+        
+        p {
+            font-size: 32px;
+            line-height: 1.8;
+            color: #c9d1d9;
+            margin: 20px 0;
+        }
+        
+        .highlight {
+            background: linear-gradient(120deg, #ff6b6b, #ffa502);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 600;
+        }
+        
+        /* Code blocks */
+        .code-block {
+            background: rgba(22, 27, 34, 0.8);
+            border: 1px solid rgba(48, 54, 61, 0.6);
+            border-radius: 12px;
+            padding: 30px;
+            margin: 30px auto;
+            font-family: 'SF Mono', 'Fira Code', Monaco, monospace;
+            font-size: 24px;
+            text-align: left;
+            backdrop-filter: blur(10px);
+            color: #7ee787;
+            max-width: 800px;
+        }
+        
+        /* Bullet points */
+        ul {
+            text-align: left;
+            font-size: 28px;
+            line-height: 2;
+            margin: 30px auto;
+            max-width: 900px;
+        }
+        
+        ul li {
+            margin: 15px 0;
+            padding-left: 40px;
+            position: relative;
+        }
+        
+        ul li:before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 18px;
+            width: 10px;
+            height: 10px;
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+            border-radius: 50%;
+        }
+        
+        /* Navigation */
+        .nav-dots {
+            position: fixed;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 12px;
+            z-index: 10;
+        }
+        
+        .dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .dot.active {
+            width: 30px;
+            border-radius: 5px;
+            background: linear-gradient(90deg, #ff6b6b, #4ecdc4);
+        }
+        
+        /* Navigation buttons */
+        .nav-buttons {
+            position: fixed;
+            bottom: 40px;
+            right: 40px;
+            display: flex;
+            gap: 15px;
+            z-index: 10;
+        }
+        
+        .nav-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #ffffff;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+        
+        .nav-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+        
+        /* Slide number */
+        .slide-number {
+            position: fixed;
+            bottom: 40px;
+            left: 40px;
+            font-size: 18px;
+            color: rgba(255, 255, 255, 0.5);
+            z-index: 10;
+        }
+        
+        /* Animations */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes expandWidth {
+            from {
+                width: 0;
+                opacity: 0;
+            }
+            to {
+                width: 120px;
+                opacity: 1;
+            }
+        }
+        
+        /* Special elements */
+        .author-info {
+            margin-top: 40px;
+            font-size: 36px;
+            color: #8b949e;
+            opacity: 0;
+            animation: fadeInUp 1s ease-out 0.5s forwards;
+        }
+        
+        .date-info {
+            font-size: 28px;
+            color: #6e7681;
+            margin-top: 10px;
+            opacity: 0;
+            animation: fadeInUp 1s ease-out 0.7s forwards;
+        }
+        
+        .logo-placeholder {
+            width: 400px;
+            height: 200px;
+            margin: 40px auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px dashed rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 24px;
+        }
+        
+        .diagram-placeholder {
+            width: 800px;
+            height: 400px;
+            margin: 40px auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px dashed rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 24px;
+        }
+        
+        .company-box {
+            background: rgba(22, 27, 34, 0.6);
+            border: 1px solid rgba(48, 54, 61, 0.6);
+            border-radius: 16px;
+            padding: 40px;
+            margin: 30px auto;
+            backdrop-filter: blur(10px);
+            max-width: 1000px;
+        }
+        
+        .big-text {
+            font-size: 48px;
+            color: #ff6b6b;
+            font-weight: 600;
+            margin: 30px 0;
+        }
+        
+        .transition-slide {
+            font-size: 120px;
+            font-weight: 700;
+            color: #ffffff;
+        }
+        
+        .arrow-right {
+            font-size: 48px;
+            color: #4ecdc4;
+            margin-top: 40px;
+        }
+        
+        /* Technical spec grid */
+        .spec-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 30px;
+            max-width: 1000px;
+            margin: 40px auto;
+        }
+        
+        .spec-item {
+            background: rgba(22, 27, 34, 0.8);
+            border: 1px solid rgba(48, 54, 61, 0.6);
+            border-radius: 12px;
+            padding: 30px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .spec-item h4 {
+            color: #4ecdc4;
+            font-size: 28px;
+            margin-bottom: 15px;
+        }
+        
+        .spec-item p {
+            font-size: 20px;
+            color: #a8b2c7;
+            margin: 0;
+        }
+        
+        .small-text {
+            font-size: 20px;
+            color: #6e7681;
+            font-style: italic;
+        }
+        
+        .closing-thoughts {
+            text-align: left;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        
+        .closing-thoughts h3 {
+            color: #ff6b6b;
+            font-size: 36px;
+            margin-top: 40px;
+            margin-bottom: 20px;
+        }
+        
+        .closing-thoughts p, .closing-thoughts li {
+            font-size: 26px;
+            line-height: 1.8;
+            color: #c9d1d9;
+        }
+        
+        .usb-analogy {
+            background: rgba(22, 27, 34, 0.8);
+            border-radius: 16px;
+            padding: 40px;
+            margin: 40px auto;
+            max-width: 900px;
+        }
+        
+        .usb-analogy p {
+            font-size: 28px;
+            margin: 15px 0;
+        }
+        
+        .formula {
+            font-size: 36px;
+            color: #ffa502;
+            font-family: 'SF Mono', Monaco, monospace;
+            margin: 30px 0;
+        }
+        
+        /* Tool list styling */
+        .tool-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: center;
+            margin: 30px 0;
+        }
+        
+        .tool-item {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px 30px;
+            border-radius: 25px;
+            font-size: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+    </style>
+</head>
+<body>
+    <canvas id="particleCanvas"></canvas>
+    
+    <!-- Slide 1: Title -->
+    <div class="slide active">
+        <div class="slide-content">
+            <h1>APIs to MCP</h1>
+            <div class="accent-line"></div>
+            <div class="subtitle">Standardizing Agent Integrations</div>
+            <div class="author-info">Abhishek Srinivasa Raju Padmavathi</div>
+            <div class="date-info">July 17, 2025</div>
+        </div>
+    </div>
+    
+    <!-- Slide 2: Code Repository -->
+    <div class="slide">
+        <div class="slide-content">
+            <h2 style="margin-bottom: 80px;">Follow Along</h2>
+            <p style="font-size: 48px; color: #4ecdc4; font-weight: 600;">github.com/abhisheksp/mcp-first-principles</p>
+        </div>
+    </div>
+    
+    <!-- Slide 3: How I Made This -->
+    <div class="slide">
+        <div class="slide-content">
+            <h2>How I Made This Talk Material?</h2>
+            <div class="spec-grid" style="margin-top: 60px;">
+                <div class="spec-item">
+                    <h4>Talk Design & Flow</h4>
+                    <p>Claude.ai and ChatGPT</p>
+                </div>
+                <div class="spec-item">
+                    <h4>Code Implementation</h4>
+                    <p>Claude Code</p>
+                </div>
+                <div class="spec-item" style="grid-column: 1 / -1;">
+                    <h4>Slides & Visuals</h4>
+                    <p>Claude.ai</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Slide 3: WatchTower.AI -->
+    <div class="slide">
+        <div class="slide-content">
+            <h2>Building WatchTower.AI</h2>
+            <img src="watch_tower_logo_new.png" alt="WatchTower.AI Logo" style="width: 400px; height: 200px; margin: 40px auto; display: block; object-fit: contain;">
+            <div class="company-box">
+                <p>WatchTower.AI turns raw cloud logs into actionable, <span class="highlight">LLM-ready insights</span> in seconds.</p>
+                <p>It auto-discovers your AWS, GCP, and Azure sources, normalizes auth and transport, then surfaces one MCP tool catalogue to any agent.</p>
+                <p class="big-text">Think "Datadog meets ChatGPT"</p>
+                <p>Observe, ask, and solve production issues through a single conversational interface.</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Slide 4: Agent-LLM Recap -->
+    <div class="slide">
+        <div class="slide-content">
+            <h2>Quick Recap: Agents & LLMs</h2>
+            <img src="user-agent-llm-interaction.png" alt="User → Agent → LLM Interaction Diagram" style="width: 800px; height: 400px; margin: 40px auto; display: block; object-fit: contain;">
+            <ul style="font-size: 32px;">
+                <li>Agents orchestrate tasks and maintain context</li>
+                <li>LLMs provide intelligence through stateless API calls</li>
+                <li>Each interaction is independent - no memory between calls</li>
+            </ul>
+        </div>
+    </div>
+    
+    <!-- Slide 5: Code Demo Transition -->
+    <div class="slide">
+        <div class="slide-content">
+            <div class="transition-slide">Let's Build It!</div>
+            <div class="arrow-right">→ Switch to IDE</div>
+        </div>
+    </div>
+    
+    <!-- Slide 6: MCP Introduction -->
+    <div class="slide">
+        <div class="slide-content" style="max-width: 1400px; width: 95%;">
+            <h2 style="margin-bottom: 60px;">Model Context Protocol (MCP)</h2>
+            <div style="display: grid; grid-template-columns: 70% 30%; gap: 60px; align-items: center;">
+                <!-- Left side - Image -->
+                <div>
+                    <img src="mcp-usb-c.png" alt="MCP Architecture Diagram (USB-C Analogy)" style="width: 100%; height: 500px; object-fit: contain;">
+                    <p class="small-text" style="text-align: center; margin-top: 15px;">Image credit: Norah Sakal</p>
+                </div>
+                
+                <!-- Right side - Text -->
+                <div style="text-align: left;">
+                    <p style="font-size: 36px; margin-bottom: 40px; line-height: 1.4;">
+                        <strong>"Think of MCP like a USB-C port for AI applications"</strong>
+                    </p>
+                    <p style="font-size: 24px; line-height: 1.8; margin-bottom: 40px;">
+                        Just as USB-C provides a standardized way to connect your devices to various peripherals and accessories, MCP provides a standardized way to connect AI models to different data sources and tools.
+                    </p>
+                    <div style="background: rgba(22, 27, 34, 0.8); border-radius: 12px; padding: 30px; backdrop-filter: blur(10px);">
+                        <p style="font-size: 22px; margin: 10px 0;"><strong style="color: #4ecdc4;">MCP Host</strong> = Your laptop</p>
+                        <p style="font-size: 22px; margin: 10px 0;"><strong style="color: #4ecdc4;">MCP Client</strong> = The USB-C port</p>
+                        <p style="font-size: 22px; margin: 10px 0;"><strong style="color: #4ecdc4;">MCP Server</strong> = The peripheral</p>
+                    </div>
+                    <p style="text-align: center; margin-top: 40px; font-size: 28px; color: #ff6b6b;">
+                        One protocol, endless connections.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Slide 7: MCP Technical Specs -->
+    <div class="slide">
+        <div class="slide-content">
+            <h2>MCP Technical Specifications</h2>
+            <div class="spec-grid">
+                <div class="spec-item">
+                    <h4>Message Format</h4>
+                    <p>JSON-RPC 2.0 based communication</p>
+                </div>
+                <div class="spec-item">
+                    <h4>Transport Modes</h4>
+                    <p>stdio, HTTP/SSE, WebSocket</p>
+                </div>
+                <div class="spec-item">
+                    <h4>Core Components</h4>
+                    <p>Hosts, Clients, Servers, Transports</p>
+                </div>
+                <div class="spec-item">
+                    <h4>Key Features</h4>
+                    <p>Tool discovery, capability negotiation, stateless design</p>
+                </div>
+            </div>
+            <p class="small-text" style="text-align: center; margin-top: 40px;">
+                Full specification: github.com/modelcontextprotocol/specification
+            </p>
+        </div>
+    </div>
+    
+    <!-- Slide 8: Real MCP Demo -->
+    <div class="slide">
+        <div class="slide-content">
+            <div class="transition-slide">Real MCP in Action</div>
+            <div class="arrow-right">→ Live Demo</div>
+        </div>
+    </div>
+    
+    <!-- Slide 9: Closing Thoughts -->
+    <div class="slide">
+        <div class="slide-content">
+            <h2>Closing Thoughts</h2>
+            <div class="closing-thoughts">
+                <h3>1. Is MCP the only right way?</h3>
+                <p>No. We made specific decisions (message format, transport modes, etc.). Different decisions lead to different protocols. Adoption rate is what matters.</p>
+                
+                <h3>2. Why this talk?</h3>
+                <ul>
+                    <li>I want engineers to have deep understanding of MCP through natural code evolution - making it intuitive and memorable</li>
+                    <li>AI launches are overwhelming - happening daily with new terms and concepts</li>
+                </ul>
+                
+                <h3>3. What's next?</h3>
+                <p>You decide! Please reach out to me with suggestions.</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Slide 10: Questions -->
+    <div class="slide">
+        <div class="slide-content">
+            <div class="transition-slide" style="font-size: 144px;">Questions?</div>
+        </div>
+    </div>
+    
+    <!-- Bonus Slide 1: Why MCP's Rapid Adoption -->
+    <div class="slide">
+        <div class="slide-content">
+            <h2>Why MCP's Rapid Adoption?</h2>
+            <ul style="font-size: 32px;">
+                <li><strong>Right timing:</strong> Post function-calling era (June 2023)</li>
+                <li><strong>Anthropic's backing:</strong> Claude Desktop implementation</li>
+                <li><strong>Simple yet complete:</strong> JSON-RPC is familiar</li>
+                <li><strong>Transport agnostic:</strong> Works everywhere</li>
+                <li><strong>Open specification:</strong> Community-driven</li>
+                <li><strong>Immediate value:</strong> Solves real n×m×p problem</li>
+            </ul>
+            <p style="margin-top: 50px; font-size: 36px; text-align: center;">
+                Sometimes being <span class="highlight">"good enough"</span> at the right time beats perfect.
+            </p>
+        </div>
+    </div>
+    
+    <!-- Navigation -->
+    <div class="nav-dots" id="navDots"></div>
+    
+    <div class="nav-buttons">
+        <button class="nav-btn" onclick="previousSlide()">← Previous</button>
+        <button class="nav-btn" onclick="nextSlide()">Next →</button>
+    </div>
+    
+    <div class="slide-number">
+        <span id="currentSlide">1</span> / <span id="totalSlides">12</span>
+    </div>
+    
+    <script>
+        // Slide navigation
+        let currentSlideIndex = 0;
+        const slides = document.querySelectorAll('.slide');
+        const totalSlides = slides.length;
+        
+        // Create navigation dots
+        const navDotsContainer = document.getElementById('navDots');
+        for (let i = 0; i < totalSlides; i++) {
+            const dot = document.createElement('div');
+            dot.className = 'dot';
+            if (i === 0) dot.classList.add('active');
+            dot.onclick = () => goToSlide(i);
+            navDotsContainer.appendChild(dot);
+        }
+        
+        const dots = document.querySelectorAll('.dot');
+        
+        function updateSlideVisibility() {
+            slides.forEach((slide, index) => {
+                if (index === currentSlideIndex) {
+                    slide.classList.add('active');
+                } else {
+                    slide.classList.remove('active');
+                }
+            });
+            
+            // Update dots
+            dots.forEach((dot, index) => {
+                if (index === currentSlideIndex) {
+                    dot.classList.add('active');
+                } else {
+                    dot.classList.remove('active');
+                }
+            });
+            
+            // Update slide number
+            document.getElementById('currentSlide').textContent = currentSlideIndex + 1;
+            document.getElementById('totalSlides').textContent = totalSlides;
+        }
+        
+        function nextSlide() {
+            currentSlideIndex = (currentSlideIndex + 1) % totalSlides;
+            updateSlideVisibility();
+        }
+        
+        function previousSlide() {
+            currentSlideIndex = (currentSlideIndex - 1 + totalSlides) % totalSlides;
+            updateSlideVisibility();
+        }
+        
+        function goToSlide(index) {
+            currentSlideIndex = index;
+            updateSlideVisibility();
+        }
+        
+        // Keyboard navigation
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === ' ') {
+                e.preventDefault();
+                nextSlide();
+            } else if (e.key === 'ArrowLeft') {
+                e.preventDefault();
+                previousSlide();
+            } else if (e.key >= '0' && e.key <= '9') {
+                const slideNumber = parseInt(e.key);
+                if (slideNumber > 0 && slideNumber <= totalSlides) {
+                    goToSlide(slideNumber - 1);
+                }
+            }
+        });
+        
+        // Particle Effect
+        const canvas = document.getElementById('particleCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        
+        const particles = [];
+        const particleCount = 100;
+        
+        class Particle {
+            constructor() {
+                this.reset();
+                this.y = Math.random() * canvas.height;
+            }
+            
+            reset() {
+                this.x = Math.random() * canvas.width;
+                this.y = -10;
+                this.size = Math.random() * 2 + 0.5;
+                this.speedX = (Math.random() - 0.5) * 0.3;
+                this.speedY = Math.random() * 0.5 + 0.3;
+                this.opacity = Math.random() * 0.3 + 0.1;
+                this.color = Math.random() > 0.5 ? '#ff6b6b' : '#4ecdc4';
+            }
+            
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+                
+                if (this.y > canvas.height + 10 || this.x < -10 || this.x > canvas.width + 10) {
+                    this.reset();
+                }
+            }
+            
+            draw() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fillStyle = this.color;
+                ctx.globalAlpha = this.opacity;
+                ctx.fill();
+                ctx.globalAlpha = 1;
+            }
+        }
+        
+        // Create particles
+        for (let i = 0; i < particleCount; i++) {
+            particles.push(new Particle());
+        }
+        
+        // Connect nearby particles
+        function connectParticles() {
+            for (let i = 0; i < particles.length; i++) {
+                for (let j = i + 1; j < particles.length; j++) {
+                    const dx = particles[i].x - particles[j].x;
+                    const dy = particles[i].y - particles[j].y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    
+                    if (distance < 120) {
+                        ctx.beginPath();
+                        ctx.moveTo(particles[i].x, particles[i].y);
+                        ctx.lineTo(particles[j].x, particles[j].y);
+                        ctx.strokeStyle = 'rgba(255, 255, 255, ' + (1 - distance / 120) * 0.05 + ')';
+                        ctx.lineWidth = 0.5;
+                        ctx.stroke();
+                    }
+                }
+            }
+        }
+        
+        // Animation loop
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            particles.forEach(particle => {
+                particle.update();
+                particle.draw();
+            });
+            
+            connectParticles();
+            requestAnimationFrame(animate);
+        }
+        
+        animate();
+        
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+        
+        // Initialize
+        updateSlideVisibility();
+    </script>
+</body>
+</html>
