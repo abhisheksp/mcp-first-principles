@@ -58,6 +58,8 @@ public class ProtocolMessages {
     @AllArgsConstructor
     public static class DiscoverResult {
         private List<FunctionInfo> functions;
+        private String provider;   // Optional: Provider name (e.g., "AWS", "GCP")
+        private String version;    // Optional: Provider version (e.g., "1.0")
     }
     
     @Data

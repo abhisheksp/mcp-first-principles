@@ -13,8 +13,8 @@ import static org.junit.jupiter.api.Assertions.*;
  * The LLM can choose to fetch data from AWS, GCP, or both!
  * 
  * SETUP:
- * 1. Start AWS server: mvn exec:java -Dexec.mainClass="com.watchtower.protocol.AWSCloudLogSourceProtocolServer" -Dexec.args="8001"
- * 2. Start GCP server: mvn exec:java -Dexec.mainClass="com.watchtower.protocol.GCPCloudLogSourceProtocolServer" -Dexec.args="8002"
+ * 1. Start AWS server: mvn exec:java@aws
+ * 2. Start GCP server: mvn exec:java@gcp
  * 3. Run these tests
  * 
  * This shows the true power of MCP - unified access to multiple tools!

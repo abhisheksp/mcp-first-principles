@@ -112,8 +112,8 @@ We didn't set out to build MCP - we arrived here by solving real problems!
 
 ### Setup (2 min)
 1. "Let me show you the true power of protocols"
-2. Start AWS MCP Server: `mvn exec:java -Dexec.mainClass="com.watchtower.protocol.AWSCloudLogSourceProtocolServer" -Dexec.args="8001"`
-3. Start GCP MCP Server: `mvn exec:java -Dexec.mainClass="com.watchtower.protocol.GCPCloudLogSourceProtocolServer" -Dexec.args="8002"`
+2. Start AWS MCP Server: `mvn exec:java@aws` (runs on port 8001)
+3. Start GCP MCP Server: `mvn exec:java@gcp` (runs on port 8002)
 4. "Each server implements the CloudLogSourceProtocol interface - real MCP servers!"
 
 ### Run Multi-Source Test (5 min)

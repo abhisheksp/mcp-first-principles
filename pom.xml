@@ -161,6 +161,36 @@
                     <reuseForks>false</reuseForks>
                 </configuration>
             </plugin>
+            
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>3.1.0</version>
+                <executions>
+                    <!-- AWS MCP Server -->
+                    <execution>
+                        <id>aws</id>
+                        <goals>
+                            <goal>java</goal>
+                        </goals>
+                        <configuration>
+                            <mainClass>com.watchtower.protocol.AWSCloudLogSourceProtocolServer</mainClass>
+                            <commandlineArgs>8001</commandlineArgs>
+                        </configuration>
+                    </execution>
+                    <!-- GCP MCP Server -->
+                    <execution>
+                        <id>gcp</id>
+                        <goals>
+                            <goal>java</goal>
+                        </goals>
+                        <configuration>
+                            <mainClass>com.watchtower.protocol.GCPCloudLogSourceProtocolServer</mainClass>
+                            <commandlineArgs>8002</commandlineArgs>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
 </project>
