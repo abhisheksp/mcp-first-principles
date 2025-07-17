@@ -1,0 +1,54 @@
+{
+  "events": [
+    {
+      "timestamp": 1705752000000,
+      "message": "ERROR PaymentService - API timeout after 30000ms - Transaction ID: tx-12345",
+      "logStreamName": "payment-service-prod"
+    },
+    {
+      "timestamp": 1705752060000,
+      "message": "ERROR PaymentService - Database connection pool exhausted. Active: 100, Idle: 0",
+      "logStreamName": "payment-service-prod"
+    },
+    {
+      "timestamp": 1705752120000,
+      "message": "WARN PaymentService - High latency detected: p99=5000ms, p95=3000ms",
+      "logStreamName": "payment-service-prod"
+    },
+    {
+      "timestamp": 1705752180000,
+      "message": "INFO UserService - Successfully processed 1523 requests",
+      "logStreamName": "user-service-prod"
+    },
+    {
+      "timestamp": 1705752240000,
+      "message": "INFO MetricsCollector - Current request rate: 5000 req/min from IP 192.168.1.100",
+      "logStreamName": "production-metrics"
+    },
+    {
+      "timestamp": 1705752300000,
+      "message": "ERROR PaymentService - Circuit breaker OPEN for payment-gateway",
+      "logStreamName": "payment-service-prod"
+    },
+    {
+      "timestamp": 1705752360000,
+      "message": "INFO LoadBalancer - Rerouting traffic due to unhealthy instances in us-east-1a",
+      "logStreamName": "infrastructure-prod"
+    },
+    {
+      "timestamp": 1705752420000,
+      "message": "WARN DatabaseConnection - Connection pool usage at 95%",
+      "logStreamName": "database-prod"
+    },
+    {
+      "timestamp": 1705752480000,
+      "message": "INFO APIGateway - Request count: 45000, Error rate: 2.3%, Avg latency: 230ms",
+      "logStreamName": "production-metrics"
+    },
+    {
+      "timestamp": 1705752540000,
+      "message": "ERROR PaymentService - Failed to connect to payment processor: Connection refused",
+      "logStreamName": "payment-service-prod"
+    }
+  ]
+}
