@@ -18,6 +18,7 @@ import java.util.stream.Collectors;
 @Slf4j
 public class WatchTowerAgent {
     private final Map<String, CloudLogSourceProtocolClient> protocolClients;
+    private final Map<String, List<FunctionDefinition>> providerFunctions;
     private final LLMFake llm = new LLMFake();
     
     /**
@@ -25,14 +26,17 @@ public class WatchTowerAgent {
      */
     public WatchTowerAgent(Map<String, ServerConfig> serverConfigs) {
         this.protocolClients = initializeProtocolClients(serverConfigs);
+        this.providerFunctions = discoverAllProviderFunctions();
         
         log.info("WatchTower.AI initialized with {} protocol sources: {}", 
                 protocolClients.size(), protocolClients.keySet());
         
-        // Discover and log all available functions
-        var allFunctions = discoverAllFunctions();
-        log.info("Available functions: {}", 
-                allFunctions.stream().map(FunctionDefinition::getName).collect(Collectors.toList()));
+        // Log available functions by provider (like real MCP)
+        providerFunctions.forEach((provider, functions) -> {
+            log.info("Provider {}: {} functions available: {}", 
+                    provider, functions.size(), 
+                    functions.stream().map(FunctionDefinition::getName).collect(Collectors.toList()));
+        });
     }
     
     /**
@@ -41,18 +45,27 @@ public class WatchTowerAgent {
     public String analyze(String userQuery) {
         log.info("Starting multi-source analysis for query: {}", userQuery);
         
-        // Build conversation with all available functions
+        // Build conversation with provider-aware context
         var conversation = new ArrayList<Map<String, Object>>();
+        
+        // Add provider context to the user query
+        var providerContext = buildProviderContext();
         conversation.add(Map.of(
             "role", "user",
-            "content", userQuery + " (multi-source analysis available)"
+            "content", userQuery + "\n\nAvailable providers and their functions:\n" + providerContext
         ));
         
-        var allFunctions = discoverAllFunctions();
         llm.reset();
         
-        // Agent-LLM loop with function calling
-        return executeConversationLoop(conversation, allFunctions);
+        // Agent-LLM loop with provider-aware function calling
+        return executeConversationLoop(conversation, providerFunctions);
+    }
+    
+    /**
+     * Get available functions by provider (useful for debugging and testing)
+     */
+    public Map<String, List<FunctionDefinition>> getProviderFunctions() {
+        return Collections.unmodifiableMap(providerFunctions);
     }
     
     /**
@@ -92,10 +105,15 @@ public class WatchTowerAgent {
         }
     }
     
-    private List<FunctionDefinition> discoverAllFunctions() {
+    /**
+     * Discover functions from all providers, maintaining provider separation (like real MCP)
+     */
+    private Map<String, List<FunctionDefinition>> discoverAllProviderFunctions() {
         return protocolClients.entrySet().stream()
-            .flatMap(entry -> discoverFunctionsFromSource(entry.getKey(), entry.getValue()).stream())
-            .collect(Collectors.toList());
+            .collect(Collectors.toMap(
+                Map.Entry::getKey,
+                entry -> discoverFunctionsFromSource(entry.getKey(), entry.getValue())
+            ));
     }
     
     private List<FunctionDefinition> discoverFunctionsFromSource(String sourceName, CloudLogSourceProtocolClient client) {
@@ -117,8 +135,30 @@ public class WatchTowerAgent {
         }
     }
     
-    private String executeConversationLoop(List<Map<String, Object>> conversation, List<FunctionDefinition> allFunctions) {
+    /**
+     * Build provider context string for LLM to understand available providers
+     */
+    private String buildProviderContext() {
+        return providerFunctions.entrySet().stream()
+            .map(entry -> {
+                var provider = entry.getKey();
+                var functions = entry.getValue();
+                var functionNames = functions.stream()
+                    .map(f -> "  - " + f.getName() + ": " + f.getDescription())
+                    .collect(Collectors.joining("\n"));
+                return "Provider: " + provider + "\n" + functionNames;
+            })
+            .collect(Collectors.joining("\n\n"));
+    }
+    
+    
+    private String executeConversationLoop(List<Map<String, Object>> conversation, Map<String, List<FunctionDefinition>> providerFunctions) {
         for (int iteration = 0; iteration < 10; iteration++) { // Safety limit
+            // Convert provider functions to flat list for LLM function calling
+            var allFunctions = providerFunctions.values().stream()
+                .flatMap(List::stream)
+                .collect(Collectors.toList());
+            
             var response = llm.completeWithFunctions(conversation, allFunctions);
             log.info("LLM response: {}", response.getContent());
             
@@ -130,7 +170,7 @@ public class WatchTowerAgent {
             var functionCall = response.getFunctionCall();
             log.info("Executing function: {} with args: {}", functionCall.getName(), functionCall.getArguments());
             
-            var result = executeProtocolFunction(functionCall);
+            var result = executeProtocolFunction(functionCall, providerFunctions);
             
             // Add to conversation
             conversation.add(Map.of(
@@ -149,20 +189,35 @@ public class WatchTowerAgent {
         return "Analysis incomplete - reached iteration limit";
     }
     
-    private FunctionResult executeProtocolFunction(FunctionCall call) {
+    private FunctionResult executeProtocolFunction(FunctionCall call, Map<String, List<FunctionDefinition>> providerFunctions) {
         var functionName = call.getName();
         var parts = functionName.split("\\.", 2);
         
         if (parts.length != 2) {
-            return FunctionResult.error(functionName, "Invalid function format. Expected: SOURCE.function");
+            return FunctionResult.error(functionName, "Invalid function format. Expected: PROVIDER.function");
         }
         
-        var sourceName = parts[0];
+        var providerName = parts[0];
         var actualFunction = parts[1];
-        var client = protocolClients.get(sourceName);
         
+        // Verify the function exists in the provider's function list
+        var providerFunctionList = providerFunctions.get(providerName);
+        if (providerFunctionList == null) {
+            return FunctionResult.error(functionName, "Unknown provider: " + providerName);
+        }
+        
+        // Verify the specific function exists for this provider
+        var functionExists = providerFunctionList.stream()
+            .anyMatch(f -> f.getName().equals(functionName));
+        
+        if (!functionExists) {
+            return FunctionResult.error(functionName, "Function not found in provider " + providerName);
+        }
+        
+        // Get the client for this provider
+        var client = protocolClients.get(providerName);
         if (client == null) {
-            return FunctionResult.error(functionName, "Unknown source: " + sourceName);
+            return FunctionResult.error(functionName, "No client available for provider: " + providerName);
         }
         
         try {

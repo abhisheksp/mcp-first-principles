@@ -157,7 +157,7 @@ public class WatchTowerAgentProtocolTest {
     
     @Test
     @Order(5)
-    @DisplayName("Function Discovery - LLM sees all available functions")
+    @DisplayName("Function Discovery - Provider separation like real MCP")
     public void testFunctionDiscovery() throws IOException {
         System.out.println("\n🔍 === FUNCTION DISCOVERY TEST ===");
         
@@ -168,15 +168,35 @@ public class WatchTowerAgentProtocolTest {
         
         WatchTowerAgent agent = new WatchTowerAgent(servers);
         
-        System.out.println("\n📋 Functions are discovered automatically during initialization");
-        System.out.println("Check the logs above to see the discovered functions from each source");
-        System.out.println("Functions are namespaced as AWS.* and GCP.*");
+        // Get provider functions (like real MCP maintains provider separation)
+        var providerFunctions = agent.getProviderFunctions();
         
-        // Functions are discovered automatically during initialization
-        // and logged. This test just verifies the agent can be created successfully
-        assertNotNull(agent);
+        System.out.println("\n📋 Provider Functions (like real MCP):");
+        providerFunctions.forEach((provider, functions) -> {
+            System.out.println("Provider: " + provider);
+            functions.forEach(f -> System.out.println("  - " + f.getName() + ": " + f.getDescription()));
+        });
+        
+        // Verify provider separation
+        assertTrue(providerFunctions.containsKey("AWS"), "Should have AWS provider");
+        assertTrue(providerFunctions.containsKey("GCP"), "Should have GCP provider");
+        
+        // Verify each provider has its own functions
+        var awsFunctions = providerFunctions.get("AWS");
+        var gcpFunctions = providerFunctions.get("GCP");
+        
+        assertNotNull(awsFunctions, "AWS functions should not be null");
+        assertNotNull(gcpFunctions, "GCP functions should not be null");
+        assertTrue(awsFunctions.size() > 0, "AWS should have functions");
+        assertTrue(gcpFunctions.size() > 0, "GCP should have functions");
+        
+        // Verify function namespacing
+        assertTrue(awsFunctions.stream().allMatch(f -> f.getName().startsWith("AWS.")), 
+                   "AWS functions should be namespaced");
+        assertTrue(gcpFunctions.stream().allMatch(f -> f.getName().startsWith("GCP.")), 
+                   "GCP functions should be namespaced");
         
         agent.close();
-        System.out.println("\n✅ Function discovery working correctly!");
+        System.out.println("\n✅ Provider separation working correctly - just like real MCP!");
     }
 }

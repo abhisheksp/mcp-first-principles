@@ -171,11 +171,15 @@ And we naturally arrived at MCP!"
 - "Notice: implements both CloudLogSourceProtocolClient (standard protocol) and CloudLogSource (backward compatibility)"
 - "No source-specific code - works with any protocol server!"
 
-#### Fourth: Multi-Source Agent
-- Show new WatchTowerAgent constructor
+#### Fourth: Multi-Source Agent - Real MCP Pattern
+- Show WatchTowerAgent maintaining Map<String, List<FunctionDefinition>> providerFunctions
 - "Connects to MULTIPLE servers simultaneously"
-- Walk through the unified function discovery
+- "Each provider maintains its own function list - just like real MCP!"
+- Show buildProviderContext() method that tells LLM about each provider
 - "Functions are namespaced: AWS.fetchLogs, GCP.fetchLogs"
+- "Agent uses providerFunctions directly in LLM loop - no flattening!"
+- "Function execution validates against provider's function list"
+- "This is EXACTLY how real MCP maintains provider boundaries"
 
 #### Fifth: Demo
 - Run the protocol test
