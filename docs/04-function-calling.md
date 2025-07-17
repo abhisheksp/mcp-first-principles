@@ -36,6 +36,19 @@ while (llm.needsMoreData()) {
 
 ## The Agent-LLM Loop
 
+Before
+```mermaid
+graph LR
+    A[User Query] --> B[Agent]
+    B --> C[LLM]
+    C -->D[Final Answer]
+
+
+    style B fill:#1a365d,stroke:#2c5282,stroke-width:4px,color:#fff
+    style C fill:#22543d,stroke:#38a169,stroke-width:4px,color:#fff
+```
+
+After
 ```mermaid
 graph LR
     A[User Query] --> B[Agent]
