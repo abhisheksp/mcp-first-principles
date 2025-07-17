@@ -2,9 +2,11 @@
 
 ### 📊 Presentation Slides
 
-**[View Complete Presentation: slides/slides.html](slides/slides.html)**
+**[🎯 View Live Presentation](https://htmlpreview.github.io/?https://github.com/abhisheksp/mcp-first-principles/blob/main/slides/slides.html)**
 
-Open the HTML file in your browser to see the full talk slides with animations and visual explanations of the MCP evolution.
+*Or download and open [slides/slides.html](slides/slides.html) locally in your browser*
+
+The presentation includes animations and visual explanations of the MCP evolution from first principles.
 
 ### 1  Why this repo exists
 
@@ -46,7 +48,7 @@ Each git branch represents a chapter in that story; the code is illustrative, bu
 
 ### 4  Running the demos live
 
-1. **Open the presentation**: Start with `slides/slides.html` in your browser for the visual narrative
+1. **Open the presentation**: Start with the [live slides](https://htmlpreview.github.io/?https://github.com/abhisheksp/mcp-first-principles/blob/main/slides/slides.html) for the visual narrative
 2. **Check out the branch for the phase you're discussing.**
 3. `mvn test -q` to run the illustrative JUnit scenarios; they log rich console output.
 4. Use `git diff` between phases to *show, not tell* how design pressure drives refactors.
